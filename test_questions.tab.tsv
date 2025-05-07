@@ -1,0 +1,72 @@
+What is the goal of the “Political Spectrum of News Headlines” project?	To build a machine learning model that predicts the political preferences of the author based on their headline.
+What numerical scale is used to represent political bias in the “Political Spectrum of News Headlines” project?	A scale from -2 to +2, where -2 is far left and +2 is far right.
+Which machine learning model was implemented and why?	Naive Bayes, chosen for its implementation simplicity.
+What was one challenge faced while working with the model?	Difficulty testing and running the model due to the size of matrices.
+What was the role of TF-IDF in the “Political Spectrum of News Headlines” projec?	It was used to vectorize headlines based on their word frequencies for machine learning input.
+How many news websites were scraped for data, and which ones are named?	Six websites, including Fox News, Washington Post, CNN, BBC, and The New York Times.
+What is one proposed improvement for future versions of the model?	Use of latent semantic learning and bi-directional models.
+What was the academic context of this project?	It was part of an undergraduate special topics mathematics course at UC Davis.
+Why does the raw data include a column for the date?	To allow exploration of how political viewpoints shift over time.
+Can this system answer the question: “Who won the 2024 U.S. presidential election?”	Not answerable from the document.
+What is the primary purpose of web_reader_general_catalog?	To scrape UC Davis degree catalog pages to extract course names and their prerequisites and save the information to a CSV file.
+Which library is used to parse HTML content in web_reader_general_catalog?	BeautifulSoup from the bs4 library.
+Why is requests.get() used in web_reader_general_catalog?	To send HTTP GET requests and retrieve the HTML content of web pages.
+What is the purpose of the major_hrefs list?	It stores the relative URL paths to individual major degree pages.
+Why does the script filter out URLs containing "graduate"?	To exclude graduate-level degrees and only process undergraduate program pages.
+What class name is used to locate the container for major links in the HTML document?	"page-content-section-wrapper"
+Why does the script use two separate find_all() calls: one for course-summary-wrapper and one for full-width-column?	One is used to locate the course names, and the other is used to find the corresponding prerequisite information.
+What is the role of the re.findall() lines in the prerequisite parsing loop?	To extract course codes that match the format like ABC 123 or ABC 123A.
+What problem exists with the line temp_pr.replace(temp_pr[-1], "")?	It has no effect because replace() returns a new string and the result is not reassigned.
+What data format is the output written in?	A CSV file where each line contains a course name and its prerequisites.
+What could happen if a course had more or fewer than three <span> elements in the prerequisite section?	The line str(prereqentry.find_all("span")[2]) would raise an IndexError.
+How are multiple prerequisites joined when more than one is found in a sentence?	They are joined with slashes (/).
+How does the script treat multiple course prerequisites within a single course entry?	It aggregates them into a comma-separated string where alternatives are joined with /.
+What improvement could be made in terms of avoiding duplicate data entries?	Ensure that each course is only added once by checking for duplicates before appending to the list.
+What happens if a course has no prerequisites listed?	The script will still write the course name with an empty or malformed second column in the CSV.
+What is the purpose of exp1 in master_thesis?	To run inference tasks using different LLM architectures on JSON-formatted input data and save the output to results files.
+Which LLM architectures are supported by master_thesis?	Llama, Gemma, Mistral, and DeepSeek.
+What type of data does the load_data() function load?	A list of dictionary instances from a JSON file, each containing prompt-related data for a task.
+How are the results saved during and after model inference?	Using the checkpoint() function, which writes the results to a JSON file named with the model and task ID.
+What file path does the script expect to find task data in?	../data/tasks/task{task}.json relative to the script's directory.
+What does the run() function return?	A list of dictionaries, each containing the task number, word, definition, prompt, model output, sentence, and optionally a gold label.
+Why does the script use use_tqdm = False by default?	Possibly to avoid unnecessary overhead or visual clutter during batch processing.
+What is the role of the checkpoint() function during inference?	It periodically saves intermediate results to avoid data loss and allow progress tracking.
+What would happen if the model.forward() function failed for a batch?	The script would raise an exception and stop execution, since no error handling is present.
+What data is expected in each instance within the task JSON files?	At minimum: word, definition, sentence, and prompt; optionally gold.
+How does the script determine which model architecture to use when run from the command line?	By parsing argv[1] and mapping it to an index in the architectures list.
+What does the script default to if no command-line arguments are provided?	It runs all architectures (0 to 3) on all tasks (1 to 4).
+Why is TOKENIZERS_PARALLELISM set to "true"?	To enable parallel processing in tokenizers, improving performance in some environments.
+What is the function of the tqdm library in master_thesis?	It provides a progress bar for monitoring batch processing in the run() function.
+What potential improvement could be made in terms of error handling?	Wrapping model inference and file operations in try/except blocks to handle runtime errors gracefully.
+What is the main purpose of exp2 of master_thesis?	To extract contextual token embeddings from language model outputs for different tasks and input types.
+Which transformer models are used in master_thesis?	Llama-3.2-3B-Instruct, Gemma-3-4B-IT, Mistral-7B-Instruct-v0.3, DeepSeek-R1-Distill-Llama-8B.
+What are the four possible embedding extraction tasks defined in the script?	token, definition, response, and prompt.
+How are batches constructed for token embeddings from prompts?	By extracting the first prompt string from each instance’s prompt field.
+What is the output of the model used to compute embeddings?	The last hidden state from the model's hidden_states output.
+What happens if the target word is not found in any token span during token-level embedding extraction?	The script prints the unmatched spans and raises an exception.
+How does the script determine where to save embeddings?	It saves to the results/embed directory, with filenames based on the model and task name.
+Why is offset_mapping used during token embedding extraction?	To align model tokens with character spans for identifying embeddings corresponding to the target word.
+Why does the script skip certain (task, via) combinations, such as definition or prompt when via == sentence?	These tasks are not relevant or don't apply to sentence-based input, likely to avoid redundant computation.
+How is the response embedding computed differently from the token embedding?	response embedding is the mean of all token embeddings, while token embedding isolates the target word's token(s).
+What two modes can exp2 in master_thesis run in, and how are they triggered?	"general" (default) and "results", determined by command-line arguments.
+In "results" mode, what type of files are processed?	Model output JSONs from the results/task directory.
+What tokenizer behavior is enforced before embedding extraction?	Padding is enabled, and the eos_token is used as the pad token.
+Why might you use "results" mode instead of "general"?	To embed only model-generated responses, potentially after inference is already completed.
+What batch size is used in both modes for embedding extraction?	16
+Why are hidden states computed with torch.no_grad()?	To reduce memory usage and improve efficiency since gradients are not needed during inference.
+What is the purpose of the MemorySaver in the Agent class?	It serves as a checkpointing system for saving the model’s memory during interactions, used by the tool agent.
+What Python module is used to create the tool_agent_executor?	create_react_agent from langgraph.prebuilt.
+What condition determines whether tools should be used to answer a user's prompt?	If the model's decision response contains the word “no”, indicating it cannot answer without using a tool.
+What is the role of the system_prompts dictionary in the Agent class?	It provides a predefined system message guiding the model's behavior and constraints, such as only teaching math.
+What type of message is used to represent user input in the stream method?	A HumanMessage object.
+Which two toolkits are loaded in the Agent's initialization?	LaTeXToolkit and PlanningToolkit.
+What happens if the model decides it does not need a tool?	It answers the question directly without invoking the tool agent.
+What external modules or classes are imported for handling messaging?	HumanMessage and SystemMessage from langchain_core.messages.
+What does the stream method yield during execution?	It yields each step of the tool agent's streamed output.
+What model is recommended in the class comment and used for all toolkits?	"meta-llama/Llama-3.3-70B-Instruct-Turbo-Free".
+What is the expected behavior of the agent according to the system prompt?	To teach math empathetically using LaTeX, only using tools when necessary, and never revealing answers directly.
+In what format must all responses be provided by the agent?	All responses must be formatted in LaTeX.
+What does the run method do?	It continuously takes user input, streams model responses, and prints them until the user types "exit".
+Which function is used to dynamically choose whether tools are needed?	_tool_decider.
+How are tools gathered in the build_tool_agent method?	Each toolkit’s get_tools() method is called and the tools are aggregated.
+What environment configuration is set before initializing the model?	Credentials are loaded via load_credentials().
