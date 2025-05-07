@@ -1,0 +1,184 @@
+---
+title: "Plots From Function Word Data From Childes"
+author: "Sunny Zhou"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+require(stats)
+library(childesr)
+library(tidyverse)
+library(feather)
+library(data.table)
+library(dplyr)
+library(radiant)
+library(zipfR)
+library(utilities)
+```
+
+
+#Load the data from local files
+```{r}
+#read the raw data
+# exclusions <- read.csv(file = '../raw_data/token_exclusions.csv')
+english_tokens<- read_feather(path = '../raw_data/english_tokens.feather')
+# speaker_stats<- read.csv(file="../raw_data/speaker_function_word_stats.csv")
+# all_english_tokens <- read_feather(path = '../raw_data/all_english_function_word_tokens.feather')
+processed_tokens<-read_feather(path='../processed_data/english_tokens_processed.feather')
+```
+
+#Adding column to processed_tokens with the frequencies of words based on speaker role.
+```{r general data}
+# PDF <- dzipf(x=1:n_distinct(processed_tokens_counts$gloss), N=length(processed_tokens_counts$gloss), s=2)
+
+#plot the population ages
+processed_tokens%>%filter(speaker=="child")%>%group_by(age)%>%distinct(speaker_id)%>%pull(age)%>%table()%>%plot(main="Children Population Ages",
+  xlab="Age (months)", ylab="Frequency")
+
+# counting occurrence of tokens based on speakers
+processed_tokens<-processed_tokens%>%group_by(speaker)%>%mutate(num_speakers=n())
+processed_tokens<-processed_tokens%>%group_by(speaker,gloss)%>%mutate(n_general=n())
+processed_tokens<-processed_tokens%>%mutate(rf_general=round(n_general/num_speakers,digits=5))
+processed_tokens<-processed_tokens%>%mutate(logf_general=round(log(n_general),digits=5))
+
+# counting occurrence of tokens based on speakers in age
+processed_tokens<-processed_tokens%>%group_by(speaker,age)%>%mutate(num_speakers_by_abin=n())
+processed_tokens<-processed_tokens%>%group_by(speaker,age,gloss)%>%mutate(n_abin=n())
+processed_tokens<-processed_tokens%>%mutate(rf_abin=round(n_abin/num_speakers_by_abin,digits=5))
+processed_tokens<-processed_tokens%>%mutate(logf_abin=round(log(n_abin),digits=5))
+
+# counting occurrence of tokens based on speakers in age and function word category
+processed_tokens<-processed_tokens%>%group_by(speaker,age,functionword_category)%>%mutate(n_cat=n())
+processed_tokens<-processed_tokens%>%mutate(rf_cat=round(n_cat/num_speakers_by_abin,digits=5))
+processed_tokens<-processed_tokens%>%mutate(logf_cat=round(log(n_cat),digits=5))
+
+## removing duplicate words
+processed_tokens_counts<-processed_tokens%>%distinct(gloss,speaker,age,.keep_all= TRUE)
+
+```
+
+```{r cleaning data}
+# processed_tokens_counts$gloss<-processed_tokens_counts$gloss%>%factor(levels=processed_tokens_counts)
+parent_data<-processed_tokens_counts%>%filter(speaker=="parent")%>%distinct(gloss,speaker_id,.keep_all= TRUE)
+child_data<-processed_tokens_counts%>%filter(speaker=="child")%>%distinct(gloss,speaker_id,.keep_all= TRUE)
+```
+
+
+#Plotting general plots for children and parents
+
+```{r general plots}
+#raw frequency plot
+child_data[0:100,]%>%ggplot(aes(x=rank(reorder(gloss,-n_general)), y=n_general,color=functionword_category)) +
+  geom_point()+
+  theme_minimal()+labs(title="Children Token Raw Frequencies", 
+         x="Frequency Rank", y = " Raw Frequency")+scale_x_continuous(breaks = seq(0, 100, by = 10))+ labs(color='Lexical Category') 
+# ggsave("child_general.png")
+
+
+#relative frequency plot
+child_data[0:100,]%>%ggplot(aes(x=rank(reorder(gloss,-rf_general)), y=rf_general,color=functionword_category)) +
+  geom_point()+
+  theme_minimal()+labs(title="Children Token Relative Frequencies", 
+         x="Frequency Rank", y = " Relative Frequency")+scale_x_continuous(breaks = seq(0, 100, by = 10))+ labs(color='Lexical Category') 
+# ggsave("child_general_rf.png")
+
+child_data[0:100,]%>%ggplot(aes(x=rank(reorder(gloss,-logf_general)), y=logf_general,color=functionword_category)) +
+  geom_point()+
+  theme_minimal()+labs(title="Children Token Log Frequencies", 
+         x="Frequency Rank", y = " Log Frequency")+scale_x_continuous(breaks = seq(0, 100, by = 10))+ labs(color='Lexical Category') 
+# ggsave("child_general_logf.png")
+
+#raw frequency plot
+parent_data[0:100,]%>%ggplot(aes(x=rank(reorder(gloss,-n_general)), y=n_general,color=functionword_category)) +
+  geom_point()+
+  theme_minimal()+labs(title="Parent Token Raw Frequencies", 
+         x="Frequency Rank", y = " Raw Frequency")+scale_x_continuous(breaks = seq(0, 100, by = 10))
+# ggsave("parents_general.png")
+
+
+#relative frequency plot
+parent_data[0:100,]%>%ggplot(aes(x=rank(reorder(gloss,-rf_general)), y=rf_general,color=functionword_category)) +
+  geom_point()+
+  theme_minimal()+labs(title="Parent Token Relative Frequencies", 
+         x="Frequency Rank", y = " Relative Frequency")+scale_x_continuous(breaks = seq(0, 100, by = 10))
+# ggsave("parents_general_rf.png")
+
+parent_data[0:100,]%>%ggplot(aes(x=rank(reorder(gloss,-logf_general)), y=logf_general,color=functionword_category)) +
+  geom_point()+
+  theme_minimal()+labs(title="Parent Token Log Frequencies", 
+         x="Frequency Rank", y = " Log Frequency")+scale_x_continuous(breaks = seq(0, 100, by = 10))
+# ggsave("parents_general_log.png")
+```
+
+```{r}
+ordered_words<-levels(reorder(processed_tokens$gloss,-processed_tokens$n_general))
+for (x in ordered_words[1:20]){
+token_data<-processed_tokens%>%filter(gloss==x)%>%distinct(gloss,speaker,age,.keep_all= TRUE)
+# #raw frequency plot
+# print(token_data%>%ggplot(aes(x=age, y=n_abin,color=speaker)) +
+#   geom_point()+
+#   theme_minimal()+labs(title=sprintf("%s Token Raw Frequencies",x), 
+#          x="Age Bins (months)", y = " Raw Frequency"))
+
+#relative frequency plot
+print(token_data%>%ggplot(aes(x=age, y=rf_abin,color=speaker)) +
+  geom_point()+
+  theme_minimal()+labs(title=sprintf("\"%s\" Token Relative Frequencies",x),
+         x="Age Bins (months)", y = " Relative Frequency")+scale_x_continuous(breaks = seq(0, 72, by = 12)))
+ggsave(sprintf("%s.png",x))
+
+# 
+# token_data%>%ggplot(aes(x=age, y=logf_abin,color=speaker)) +
+#   geom_point()+
+#   theme_minimal()+labs(title=sprintf("%s Token Log Frequencies",x), 
+#          x="Age Bins (months)", y = " Log Frequency")
+# Sys.sleep(2)
+}
+```
+
+```{r}
+ordered_category<-levels(reorder(processed_tokens$functionword_category,-processed_tokens$n_cat))
+for (x in ordered_category){
+cat_data<-processed_tokens%>%filter(functionword_category==x)%>%distinct(functionword_category,speaker,age,.keep_all= TRUE)
+# #raw frequency plot
+# print(token_data%>%ggplot(aes(x=age, y=n_abin,color=speaker)) +
+#   geom_point()+
+#   theme_minimal()+labs(title=sprintf("%s Token Raw Frequencies",x), 
+#          x="Age Bins (months)", y = " Raw Frequency"))
+
+#relative frequency plot
+print(cat_data%>%ggplot(aes(x=age, y=rf_cat,color=speaker)) +
+  geom_point()+
+  theme_minimal()+labs(title=sprintf("\"%s\" Word Relative Frequencies",x),
+         x="Age Bins (months)", y = " Relative Frequency")+scale_x_continuous(breaks = seq(0, 72, by = 12)))
+ggsave(sprintf("%s.png",x))
+
+# 
+# token_data%>%ggplot(aes(x=age, y=logf_abin,color=speaker)) +
+#   geom_point()+
+#   theme_minimal()+labs(title=sprintf("%s Token Log Frequencies",x), 
+#          x="Age Bins (months)", y = " Log Frequency")
+# Sys.sleep(2)
+}
+```
+* Logical Connectives: no, not, n't, and, or, if, nor
+* Quantifiers: none, some, each, every, all, most, few, many, several, a few, both, everyone, someone, somebody, everybody, nonone, everything, something, nowhere, somewhere, everywhere
+* Comparative Quantity: more, less, much
+* Numerals: 1. numbers: one, two, three, four, five, six, seven, eight, nine, ten 2. ordinals: first, second, third, fourth fifth, last
+* Modals: can, could, need, may, might, should, ought, must, maybe, perhaps, shall
+* Negative Polarity Items: any, anyone, anything, anyhow, anywhere, anything, anyway, ever, yet
+* Definiteness and Demonstratives: 1. Definite: the, a, an 2. Demonstratives: this, that, these, those
+* Temporals: 1. Quantifiers: always, usually, seldom, never, sometimes, now, often, once 2. Connectives: when, while, after, before, then, until, since, whenever, during
+* Interrogatives: who, when, what, whose, where, how, why, whom
+* Locatives: on, in, out, up, down, under, above, below, along, over, behind, across, beside, between, beyond, inside, outside, into, near, onto, toward
+* Causal Connectives: because, therefore
+* Contrast Connectives: but, although
+* Additives: again, too, also, another, other, others, still
+* Focus Particles: even, only, indeed
+* Other: either, neither, whether as, else, almost, already, except, for, from, instead, same, different, such, with, without, about, by, very
+
+
+

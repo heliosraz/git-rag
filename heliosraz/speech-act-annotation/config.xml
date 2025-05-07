@@ -1,0 +1,35 @@
+<View>
+  <Text name="text" value="$text"></Text>
+  <Labels name="turn" toName="text" showInline="true">
+      <Label value="Turn" background="red"/>
+    </Labels>
+    <Choices name="clause_type" toName="text" choice = "single" showInline="true" perRegion="true">
+      <Header value="Clause Type"/>
+        <Choice value="Declarative Clause"/>
+        <Choice value="Interrogative Clause"/>
+        <Choice value="Exclamatory Clause"/>
+        <Choice value="Imperative Clause"/>
+    </Choices>
+    <Choices name="speech_act" toName="text" choice = "single" showInline="true" perRegion="true">
+      <Header value="Speech Act"/>
+        <Header value="Commissive" size="10"/>
+          <Choice value="Offer"/>
+          <Choice value="Promise"/>
+        <Header value="Directive" size="10"/>
+          <Choice value="Request"/>
+          <Choice value="Order"/>
+          <Choice value="Warning"/>
+          <Choice value="Prompt"/>
+        <Header value="Inform" size="10"/>
+          <Choice value="Explain"/>
+          <Choice value="Open-ended Declaration"/>
+          <Choice value="Response"/>
+          <Choice value="Statement"/>
+        <Header value="Question" size="10"/>
+          <Choice value="Clarification"/>
+          <Choice value="Confirmation"/>
+          <Choice value="Open-ended"/>
+          <Choice value="Closed-ended"/>
+          <Choice value="Rhetorical"/>
+    </Choices>
+</View>

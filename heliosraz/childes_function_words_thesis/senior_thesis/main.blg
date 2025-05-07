@@ -1,0 +1,48 @@
+This is BibTeX, Version 0.99d (TeX Live 2023)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: main.aux
+The style file: apalike.bst
+Database file #1: biblio.bib
+Warning--I didn't find a database entry for "masoud2022git"
+You've used 7 entries,
+            1935 wiz_defined-function locations,
+            516 strings with 4807 characters,
+and the built_in function-call counts, 2449 in all, are:
+= -- 233
+> -- 82
+< -- 7
++ -- 28
+- -- 26
+* -- 181
+:= -- 433
+add.period$ -- 21
+call.type$ -- 7
+change.case$ -- 46
+chr.to.int$ -- 7
+cite$ -- 7
+duplicate$ -- 109
+empty$ -- 187
+format.name$ -- 35
+if$ -- 489
+int.to.chr$ -- 1
+int.to.str$ -- 0
+missing$ -- 8
+newline$ -- 38
+num.names$ -- 21
+pop$ -- 51
+preamble$ -- 1
+purify$ -- 48
+quote$ -- 0
+skip$ -- 79
+stack$ -- 0
+substring$ -- 142
+swap$ -- 14
+text.length$ -- 2
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 38
+warning$ -- 0
+while$ -- 18
+width$ -- 0
+write$ -- 90
+(There was 1 warning)

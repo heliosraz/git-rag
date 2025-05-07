@@ -1,0 +1,173 @@
+---
+title: "Plots From Function Word Data From Childes"
+author: "Sunny Zhou"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+library(childesr)
+library(tidyverse)
+library(feather)
+library(data.table)
+library(dplyr)
+
+```
+
+
+#Load the data from local files
+```{r}
+#read the raw data
+# exclusions <- read.csv(file = '../raw_data/token_exclusions.csv')
+english_tokens<- read_feather(path = '../raw_data/english_tokens.feather')
+# speaker_stats<- read.csv(file="../raw_data/speaker_function_word_stats.csv")
+# all_english_tokens <- read_feather(path = '../raw_data/all_english_function_word_tokens.feather')
+processed_tokens<-read_feather(path='../processed_data/english_tokens_processed.feather')
+```
+
+Now, the following script plots the word frequency graphs for the children population, disregarding the children's age. This plots all of the words together, i.e. content words and function words. The colors will split up the different categories of the words.
+The first graph shown is the graphs of raw frequencies. This shows the number of occurrences of each words in decreasing order. However, we want to normalize to the number of words the each speaker group uses per sentence, since parents would use talk more within an interaction, thus inflating parent occurrences of parent utterances. The second and third graphs are the relative frequencies and log frequencies of words. These will later be compared with the parents'.
+
+Different function words imply different logical and language development. By comparing each child's function word category distribution to their parents a model may be able to be formulated to predict 
+
+```{r counting frequencies}
+processed_tokens<-processed_tokens%>%group_by(speaker)%>%mutate(num_speakers=n())
+processed_tokens<-processed_tokens%>%group_by(speaker)%>%group_by(gloss)%>%mutate(count_tokens_by_speaker=n())
+processed_tokens<-processed_tokens%>%mutate(rf_tokens_by_speaker=round(count_tokens_by_speaker/num_speakers,digits=5))
+processed_tokens<-processed_tokens%>%mutate(logf_tokens_by_speaker=round(log(count_tokens_by_speaker),digits=5))
+## removing duplicates 
+processed_tokens_counts<-distinct(processed_tokens,gloss,speaker,.keep_all= TRUE)
+
+```
+
+
+```{r children plots}
+
+#raw frequency plot
+processed_tokens_counts%>%filter(speaker=="child")%>%ggplot( aes(x=rank(reorder(gloss,n,decreasing=TRUE)), y=n,color=functionword_category)) +
+  geom_point()+
+  theme_minimal()+labs(title="Children Token Raw Frequencies", 
+         x="Frequency Rank", y = " Raw Frequency")+geom_line(color='#F8766D')
+
+#relative frequency plot
+ggplot(data=counts_chi_tokens, aes(x=rank(reorder(word,n,decreasing=TRUE)), y=rf,color=functionword_category)) +
+  geom_point(stat="identity",color='#F8766D')+
+  theme_minimal()+labs(title="Children Token Relative Frequencies", 
+         x="Frequency Rank", y = "Frequency")+geom_line(color='#F8766D')
+
+#log frequency plot
+ggplot(data=counts_chi_tokens, aes(x=rank(reorder(word,n,decreasing=TRUE)), y=logf,color=functionword_category)) +
+  geom_point(stat="identity",color='#F8766D')+
+  theme_minimal()+labs(title="Children Token Log Frequencies", 
+         x="Frequency Rank", y = "Frequency")+geom_smooth(color='#F8766D')
+```
+
+```{r parent plots}
+parent_english_tokens<-processed_tokens%>%filter(speaker=="parent")
+#parent only plot
+counts_parent_tokens<-count(parent_english_tokens,word,sort=TRUE)%>%filter(word!="other")
+counts_parent_tokens$rf<-round(((counts_parent_tokens$n)/length(parent_english_tokens$word)),digits=5)
+counts_parent_tokens$logf<-round(log(counts_parent_tokens$n),digits=5)
+counts_parent_tokens<-counts_parent_tokens[order(counts_parent_tokens$n,decreasing=TRUE),]
+# counts_parent_tokens<-counts_parent_tokens[(0:20),]
+counts_parent_tokens$speaker_role<-"Parent"
+
+#raw frequency plot
+ggplot(data=counts_parent_tokens, aes(x=rank(-n), y=n,color=functionword_category)) +
+  geom_point(stat="identity",color='#00BFC4')+
+  theme_minimal()+labs(title="Parent Token Raw Frequencies", 
+         x="Frequency Rank", y = " Raw Frequency")+geom_line(color='#00BFC4')
+
+#relative frequency plot
+ggplot(data=counts_parent_tokens, aes(x=rank(-n), y=rf,color=functionword_category)) +
+  geom_point(stat="identity",color='#00BFC4')+
+  theme_minimal()+labs(title="Parent Token Relative Frequencies", 
+         x="Frequency Rank", y = "Frequency")+geom_line(color='#00BFC4')
+
+#log frequency plot
+ggplot(data=counts_parent_tokens, aes(x=rank(-n), y=logf,color=functionword_category)) +
+  geom_point(stat="identity",color='#00BFC4')+
+  theme_minimal()+labs(title="Parent Token Log Frequencies", 
+         x="Frequency Rank", y = "Frequency")+geom_smooth(color='#00BFC4')
+```
+
+```{r combined plots based on parent ordering}
+#combined plot
+counts_combined<-processed_tokens%>%group_by(speaker)%>%count(word,sort=TRUE)%>%filter(word!="other")
+counts_combined<-counts_combined%>%mutate(rf=round(n/sum(n),digits=5),.by=speaker)%>%subset(select=-c(.by))
+counts_combined$logf<-round(log(counts_combined$n),digits=5)
+
+counts_combined_order_parents<-counts_combined[order(match(counts_combined$word,counts_parent_tokens$word)),]
+counts_combined_order_parents$word<-factor(counts_combined_order_parents$word, levels = counts_parent_tokens$word)
+
+#raw frequency plot
+ggplot(data=counts_combined_order_parents, aes(x=word, y=n, color=speaker)) +
+  geom_point(stat="identity")+
+  theme(axis.text.x=element_text(angle=45,size=7))+labs(title="Parent and Children Token Raw Frequencies", 
+         x="Frequency Rank", y = " Raw Frequency")+geom_line()+
+  scale_color_manual(values=c("#F8766D","#00BFC4"))
+
+#relative frequency plot
+ggplot(data=counts_combined_order_parents, aes(x=word, y=rf, color=speaker)) +
+  geom_point(stat="identity")+
+  theme_minimal()+labs(title="Parent and Children Token Relative Frequencies", 
+         x="Frequency Rank", y = "Frequency")+geom_line()+
+  scale_color_manual(values=c("#F8766D","#00BFC4"))
+
+#log frequency plot
+ggplot(data=counts_combined_order_parents, aes(x=word, y=logf, color=speaker)) +
+  geom_point(stat="identity")+
+  theme_minimal()+labs(title="Parent and Children Log Frequencies", 
+         x="Frequency Rank", y = "Frequency")+geom_smooth()+
+  scale_color_manual(values=c("#F8766D","#00BFC4"))
+
+```
+
+```{r combined plots based on children ordering}
+counts_combined_order_children<-counts_combined
+counts_combined_order_children$word<-factor(counts_combined$word, levels = counts_chi_tokens$word)
+
+#raw frequency plot
+ggplot(data=counts_combined_order_children, aes(x=word, y=n, color=speaker)) +
+  geom_point(stat="identity")+
+  theme_minimal()+labs(title="Parent Token Raw Frequencies", 
+         x="Frequency Rank", y = " Raw Frequency")+geom_line()+
+  scale_color_manual(values=c("#F8766D","#00BFC4"))
+
+#relative frequency plot
+ggplot(data=counts_combined_order_children, aes(x=word, y=rf, color=speaker)) +
+  geom_point(stat="identity")+
+  theme_minimal()+labs(title="Parent Token Relative Frequencies", 
+         x="Frequency Rank", y = "Frequency")+geom_line()+
+  scale_color_manual(values=c("#F8766D","#00BFC4"))
+
+#log frequency plot
+ggplot(data=counts_combined_order_children, aes(x=word, y=logf, color=speaker)) +
+  geom_point(stat="identity")+
+  theme_minimal()+labs(title="Parent Token Log Frequencies", 
+         x="Frequency Rank", y = "Frequency")+geom_smooth()+
+  scale_color_manual(values=c("#F8766D","#00BFC4"))
+```
+
+```{r general combined }
+top_words_chi<-counts_chi_tokens$word[0:100]
+top_words_parent<-counts_parent_tokens$word[0:100]
+setdiff(top_words_chi,top_words_parent)
+setdiff(top_words_parent,top_words_chi)
+```
+
+```{r difference plots}
+
+```
+
+
+```{r table}
+top_words<-data.frame(counts_chi_tokens[0:100,]$word, counts_parent_tokens[0:100,]$word)
+colnames(top_words)<-c("Children","Parents")
+
+
+
+```
+
